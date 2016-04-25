@@ -1,32 +1,8 @@
 __precompile__(true)
 
-module Lorenz
-	export Lorenz
-"""
-Módulo que resuelve las ecuaciones de Lorenz clásicas:
-
-\begin{align}
-&\dot{x} = \sigma\,(y-x)\\
-&\dot{y} = r\,x-y-x\,z\\
-&\dot{z} = x\,y -b\,z
-\end{align}
-
-Donde $r$, $\sigma$, y $b$ son parámetros mayores que cero.
-
-El módulo incluye la función
-
-lorenz(t0,tf,x0,y0,z0,r,sigma,b,p)
-
-para resolver las ecuaciones utilizando polinomios de Taylor a orden p.
-
-Asimismo, se incluye la función difflorenz
-
-difflorenz(t0,tf,x01,y01,z01,x02,y02,z02,r,sigma,b,p)
-
-para calcular la separación entre dos trayectorias que empiezan al mismo tiempo
-y con mismos parámetros de Lorenz pero con condiciones iniciales diferentes.
-
-"""
+module LZ
+	export lorenz
+	export diflorenz
 using TS
 
 """
