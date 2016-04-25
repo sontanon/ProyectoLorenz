@@ -6,5 +6,5 @@
 
 ### Proyecto final de la materia  Temas Selectos de Física Computacional I 2016-2 (8314)
 
-Profesor: Luis Benet, Instituto de Ciencias Físicas, UNAM
-Ayudante: Uriel Allan Aceves Rodríguez, Facultad de Ciencias, UNAM
+* Profesor: Luis Benet, Instituto de Ciencias Físicas, UNAM
+* Ayudante: Uriel Allan Aceves Rodríguez, Facultad de Ciencias, UNAM
