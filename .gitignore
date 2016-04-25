@@ -1,2 +1,3 @@
 *.swp
-*ipynb_checkouts*
+*ipynb_checkpoints/
+*~
