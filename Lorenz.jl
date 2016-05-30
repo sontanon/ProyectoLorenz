@@ -22,6 +22,8 @@ diflorenz(t0,tf,x01,y01,z01,x02,y02,z02,r,sigma,b,p)
 module LZ
 	export lorenz
 	export diflorenz
+    export conteo_fractal
+    export dim_fractal_cajas
 using TS
 
 """
@@ -232,6 +234,96 @@ function diflorenz(t0::Real, tf::Real, x01::Real, y01::Real, z01::Real, x02::Rea
     
     end
     return tl, x1l, y1l, z1l, x2l, y2l, z2l
+end
+
+"""
+## Conteo fractal.
+La función conteo_fractal(x,r) toma una lista x que contiene 3 arreglos de datos que 
+corresponden a la solución en el espacio fase de un sistema de ecuaciones diferenciales. 
+La función identifica el tamaño que la solución ocupa y posteriormente divide este espacio
+en rxrxr cubos. La función cuenta el número de cubos que poseen al menos un punto de la
+solución dentro de ellos. 
+"""
+function conteo_fractal(x::Array{Array{Float64,1},1},r::Int64)
+    
+    #En caso de que demos una partición menor que cero, atrapamos el error.
+    if r<1
+        error("La partición del espacio debe ser un número entero")
+    end
+    
+    #Inicializamos un vector donde guardaremos la cota inferior para cada una de 
+    #nuestras coordenadas.
+    cota_inf=zeros(Float64,3);
+    #Inicializamos un vector donde guardaremos el tamaño de cada caja en cada dimensión.
+    tamano=zeros(Float64,3);
+    #Inicializamos una matriz donde guardaremos los puntos en que hemos dividido 
+    #los intervalos.
+    division=zeros(Float64,3,r+1);
+    #Inicializamos una matriz de 3x3x3 donde guardaremos el conteo de cajas que contienen
+    #al menos un punto de la solución.
+    cajas=zeros(Int64,r,r,r);
+    
+    
+    #Guardamos las cotas inferiores y los tamaños de intervalo para cada coordenada.
+    for i=1:3
+        #Definimos al intervalo más pequeño como el mínimo menos un 0.5% de la distancia
+        #respecto al máximo.
+        cota_inf[i]=minimum(x[i])-0.005*(abs(maximum(x[i])-minimum(x[i])));
+        #El tamaño total del intervalo que se estudiará se toma como 101% de la distancia
+        #entre mínimo y máximo de los datos.
+        tamano[i]=(abs(maximum(x[i])-minimum(x[i])))*(1.01);
+    end
+    
+    #Guardamos los puntos en que hemos dividido los intervalos.
+    for i=1:3
+        division[i,1] = cota_inf[i]
+        for j = 2:r+1
+            division[i,j] = cota_inf[i] + abs((j-1)*tamano[i]/r);
+        end
+    end
+    
+    # Revisamos la caja correspondiente a cada uno de los elementos de la matriz de 
+    # 3x3x3
+    for i = 1:length(x[1])
+        for j=2:r+1,k=2:r+1,l=2:r+1
+            if  (  (x[1][i]<division[1,j] && x[1][i]>=division[1,j-1]) 
+                && (x[2][i]<division[2,k] && x[2][i]>=division[2,k-1]) 
+                && (x[3][i]<division[3,l] && x[3][i]>=division[3,l-1]))
+                if cajas[j-1,k-1,l-1] != 0
+                    break;
+                else
+                    #Si existe al menos un punto de la solución en la caja
+                    #, esa caja se "llena"
+                    cajas[j-1,k-1,l-1] = 1;
+                end
+            end
+        end    
+    end
+    
+    #Regresamos la cuenta de las cajas que poseen al menos un punto de la curva.
+    return sum(cajas)
+    
+end
+
+"""
+## Dimensión fractal.
+La función dim_fractal_cajas(x,R) toma una lista x que contiene 3 arreglos de datos que 
+corresponden a la solución en el espacio fase de un sistema de ecuaciones diferenciales. 
+La función utiliza la función conteo_fractal(x,r) para dividir el espacio fase
+de la solución y contar el número de cajas que contienen al menos un elemento 
+de la solución en su interior. Este proceso lo realiza para R tamaños de caja distintos.
+Como salida se obtienen los valores de r utilizados, los valores de los conteos para cada
+r y el valor de la dimensión fractal.
+"""
+function dim_fractal_cajas{T}(x::Array{Array{T,1},1},R::Int)
+    #Se inicializa la salida de la función en ceros.
+    salida=zeros(Int64,R);
+    for i=1:R
+        # Se guardan los valores obtenidos para cada r
+        salida[i]=conteo_fractal(x,i)
+    end
+    #Se regresan los valores 
+    return R,linreg(log(collect(1:R)),log(salida))[2]
 end
 
 # Termina el módulo.
