@@ -1,22 +1,21 @@
 __precompile__(true)
 """
-LZ
+# LZ
 
 Módulo que resuelve las ecuaciones de Lorenz clásicas
 
-dx/dt = sigma (y-x),
+``dx/dt = σ(y-x),``
+``dy/dt = rx - y - xz,``
+``dz/dt = xy -bz.``
 
-dy/dt = r x - y - x z,
-
-dz/dt = x y -b z.
-
-Donde r, sigma, b son parámetros reales positivos.
+Donde r, σ, b son parámetros reales positivos.
 
 La solución se hace por medio del método de Taylor con polinomios de Taylor
 de grado indicado por el usuario.
 
 Véase las funciones
 
+```julia
 lorenz
 diflorenz
 taylor_lorenz
@@ -24,6 +23,7 @@ jacobian
 lorenz_all
 conteo_fractal
 dim_fractal_cajas
+```
 """
 module LZ
 	export lorenz
@@ -36,19 +36,26 @@ module LZ
 using TS
 
 """
-lorenz(t0,tf,x0,y0,z0,r,sigma,b,p)
+# Integrador de las ecuaciones de Lorenz
+		lorenz(t0,tf,x0,y0,z0,r,σ,b,p)
 
-Resuelve las ecuaciones de Lorenz con parámetros r, sigma, b y condiciones
-iniciales (x0,y0,z0) del tiempo inicial t0 al tiempo final tf. Las solución
-se hace mediante el método de Taylor con polinomios de Taylor hasta orden p.
+Resuelve las ecuaciones de Lorenz con parámetros `r`, `σ`, `b` y condiciones
+iniciales `(x0,y0,z0)` del tiempo inicial `t0` al tiempo final `tf`. Las solución
+se hace mediante el método de Taylor con polinomios de Taylor hasta orden `p`.
 
 Devuelve cuatro listas
-
-t, x, y, z
-
+`t, x, y, z`
 con las soluciones.
+
+## Ejemplo:
+Para obtener la solución del sistema con parámetros `r, σ, b = 28.0, 10.0, 8/3`,
+del tiempo inicial `t0 = 0.0` al tiempo final `tf = 100.0` con condiciones
+iniciales `(x0, y0, z0) = (0.1, 0.1, 0.1)` con series de Taylor a orden `p = 20`.
+```julia
+t, x, y, z = lorenz(0.0, 100.0, 0.1, 0.1, 0.1, 28.0, 10.0, 8/3, 20)
+```
 """
-function lorenz(t0::Real, tf::Real, x0::Real, y0::Real, z0::Real, r::Real, sigma::Real, b::Real, p::Int)
+function lorenz(t0::Real, tf::Real, x0::Real, y0::Real, z0::Real, r::Real, σ::Real, b::Real, p::Int)
     # Inicializamos la lista de respuestas.
 		tl = Array{Real}(0)
 		xl = Array{Real}(0)
@@ -80,7 +87,7 @@ function lorenz(t0::Real, tf::Real, x0::Real, y0::Real, z0::Real, r::Real, sigma
         for i in range(1,p)
            # En cada paso se vuelve a calcular la serie de Taylor de dx/dt = f(x,y,z),
            # para dx/dt, dy/dt, dz/dt cada vez a mayor orden.
-            dx = sigma*(y-x)
+            dx = σ*(y-x)
             dy = r*x - y - x*z
             dz = x*y - b*z
            # De ésta se extrae el nuevo coeficiente de x(t), y(t), z(t) que se anexa.
@@ -127,20 +134,27 @@ function lorenz(t0::Real, tf::Real, x0::Real, y0::Real, z0::Real, r::Real, sigma
 end
 
 """
-lorenzdif(t0,tf,x01,y01,z01,x02,y02,z02,r,sigma,b,p)
+# Comparador de Trayectorias
+		diflorenz(t0,tf,x01,y01,z01,x02,y02,z02,r,σ,b,p)
 
-Resuelve las ecuaciones de Lorenz con parámetros r, sigma, b para dos condiciones
-iniciales diferentes. La primera es un sistema con (x01,y01,z01) y el segundo
-sistema es (x02,y02,z02). Los dos sistemas se resuelven a los mismos intervalos
-de tiempo dados en la lista t.
+Resuelve las ecuaciones de Lorenz con parámetros `r`, `σ`, `b` para dos condiciones
+iniciales diferentes. La primera es un sistema con `(x01, y01, z01)` y el segundo
+sistema es `(x02, y02, z02)`. Los dos sistemas se resuelven a los mismos intervalos
+de tiempo dados en la lista `t`.
 
 Devuelve siete listas
-
-t, x1, y1, z1, x2, y2, z2
-
+`t, x1, y1, z1, x2, y2, z2`
 con las soluciones de los dos sistemas y la lista de tiempos.
+
+## Ejemplo:
+```julia
+t, x1, y1, z1, x2, y2, z2 = diflorenz(0.0, 100.0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1 + 1.0e-9, 28.0, 10.0, 8/3, 20)
+```
+Calcula las trayectorias de `t∈[0,100]` para dos sistemas que difieren en condiciones
+iniciales por 1.0e-9 en z. Los parámetros son `r, σ, b = 28, 10, 8/3` y el orden de los
+polinomios de Taylor es `p=20`.
 """
-function diflorenz(t0::Real, tf::Real, x01::Real, y01::Real, z01::Real, x02::Real, y02::Real, z02::Real, r::Real, sigma::Real, b::Real, p::Int)
+function diflorenz(t0::Real, tf::Real, x01::Real, y01::Real, z01::Real, x02::Real, y02::Real, z02::Real, r::Real, σ::Real, b::Real, p::Int)
 		# Esta función es prácticamente igual a la anterior, lorenz(...) que calcula una solución.
 		# La diferencia central es que el paso de tiempo se selcciona como el mínimo del paso de
 		# cada solución para tener soluciones en los mismos tiempos.
@@ -179,10 +193,10 @@ function diflorenz(t0::Real, tf::Real, x01::Real, y01::Real, z01::Real, x02::Rea
         z2 = Taylor(z02)
 
         for i in range(1,p)
-            dx1 = sigma*(y1-x1)
+            dx1 = σ*(y1-x1)
             dy1 = r*x1-y1-x1*z1
             dz1 = x1*y1 - b*z1
-            dx2 = sigma*(y2-x2)
+            dx2 = σ*(y2-x2)
             dy2 = r*x2-y2-x2*z2
             dz2 = x2*y2 - b*z2
 
@@ -244,19 +258,20 @@ function diflorenz(t0::Real, tf::Real, x01::Real, y01::Real, z01::Real, x02::Rea
 end
 
 """
-taylor_lorenz(t0,tf,x0,y0,z0,r,sigma,b,p)
+# Integrador de las ecuaciones de Lorenz
+		taylor_lorenz(t0,tf,x0,y0,z0,r,σ,b,p)
 
-Resuelve las ecuaciones de Lorenz con parámetros r,sigma,b por el método de
-Taylor, al igual que lorenz(t0,tf,x0,y0,z0,r,sigma,b,p), con la diferencia de que
+Resuelve las ecuaciones de Lorenz con parámetros `r, σ, b` por el método de
+Taylor, al igual que `lorenz(t0, tf, x0, y0, z0, r, σ, b, p)`, con la diferencia de que
 devuelve
 
-tl, xl, yl, zl
+`tl, xl, yl, zl`
 
-Donde tl es un array con los tiempos entre t0 y tf en pasos que elige el método
-y xl, yl, zl son arrays con los Taylor's correspondientes a cada tiempo.
+Donde `tl` es un arreglo con los tiempos entre `t0` y `tf` en pasos que elige el método
+y `xl, yl, zl` son arreglos con los `Taylor`'s correspondientes a cada tiempo.
 
 """
-function taylor_lorenz(t0::Real, tf::Real, x0::Real, y0::Real, z0::Real, r::Real, sigma::Real, b::Real, p::Int)
+function taylor_lorenz(t0::Real, tf::Real, x0::Real, y0::Real, z0::Real, r::Real, σ::Real, b::Real, p::Int)
     # Inicializamos la lista de respuestas.
     tl = Array{Real}(0)
     xl = Array{Taylor}(0)
@@ -276,7 +291,7 @@ function taylor_lorenz(t0::Real, tf::Real, x0::Real, y0::Real, z0::Real, r::Real
         for i in range(1,p)
            # En cada paso se vuelve a calcular la serie de Taylor de dx/dt = f(x,y,z),
            # para dx/dt, dy/dt, dz/dt cada vez a mayor orden.
-            dx = sigma*(y-x)
+            dx = σ*(y-x)
             dy = r*x - y - x*z
             dz = x*y - b*z
            # De ésta se extrae el nuevo coeficiente de x(t), y(t), z(t) que se anexa.
@@ -330,18 +345,33 @@ function taylor_lorenz(t0::Real, tf::Real, x0::Real, y0::Real, z0::Real, r::Real
 end
 
 """
-jacobian(t, tl, xl, yl, zl, r, sigma, b)
+# Jacobiano de las ecuaciones de Lorenz
+		jacobian(t, tl, xl, yl, zl, r, σ, b)
 
-Calcula el jacobiano de las ecuaciones de Taylor para parámetros r, sigma, b a
-un instante t. Las entradas tl, xl, yl, zl son arreglos de tiempo y de Taylors
-obtenidos con la función taylor_lorenz. Devuelve la matriz jacobiana:
+Calcula el jacobiano de las ecuaciones de Lorenz para parámetros `r, σ, b` a
+un instante `t` sobre una trayectoria integrada. Las entradas `tl, xl, yl, zl`
+son arreglos de tiempo y de `Taylor`'s obtenidos con la función `taylor_lorenz`.
+Devuelve la matriz jacobiana:
 
-[[-sigma, sigma, 0],
+```julia
+[[-σ, σ, 0],
  [r-z(t), -1, -x(t)],
  [y(t), x(t), -b]]
+```
 
+## Ejemplo
+Primero se calcula la solución entre un intervalo de tiempo `t ∈ [0,100]`, por decir
+y con ciertos parámetros y condiciones iniciales.
+```julia
+tl, xl, yl, zl = taylor_lorenz(0.0, 100.0, 0.1, 0.1, 0.1, 28.0, 10.0, 8/3, 20)
+```
+Ahora se puede calcular el jacobiano sobre cualquier punto de la trayectoria
+parametrizado por un instante de tiempo, por ejemplo `t=5.0`
+```julia
+jacobian(5.0, tl, xl, yl, zl, 28.0, 10.0, 8/3)
+```
 """
-function jacobian(t::Real,tl::Array{Real,1},xl::Array{Taylor,1},yl::Array{Taylor,1},zl::Array{Taylor,1},r::Real, sigma::Real, b::Real)
+function jacobian(t::Real,tl::Array{Real,1},xl::Array{Taylor,1},yl::Array{Taylor,1},zl::Array{Taylor,1},r::Real, σ::Real, b::Real)
     #Debemos primero encontrar en qué radio de convergencia se halla el tiempo t
     for i in range(1,length(tl)-1)
         if (tl[i] <= t) & (t <= tl[i+1])
@@ -369,26 +399,27 @@ function jacobian(t::Real,tl::Array{Real,1},xl::Array{Taylor,1},yl::Array{Taylor
             zf = sz
 
             #Devuelve la matriz Jacobiana
-            return [-sigma sigma 0; r-zf -1 -xf; yf xf -b]
+            return [-σ σ 0; r-zf -1 -xf; yf xf -b]
             break
         end
     end
 end
 
 """
-lorenz_all(t0,tf,x0,y0,z0,r,sigma,b,p,TOL)
+# Integrador de trayectoria y exponentes de Lyapunov para las ecuaciones de Lorenz
+		lorenz_all(t0,tf,x0,y0,z0,r,σ,b,p,TOL)
 
-Resuleve el sistema Lorenz parametrizado con r, sigma, b y condiciones iniciales
-x0, y0, z0 integrando desde t0 a tf. p es el orden entero de los Taylors utilizados
-en el cálculo y TOL es un  parámetro que indica la convergencia de los exponentes
+Resuleve el sistema Lorenz parametrizado con `r, σ, b` y condiciones iniciales
+`x0, y0, z0` integrando desde `t0 a tf`. `p` es el orden entero de los `Taylor`'s utilizados
+en el cálculo y `TOL` es un  parámetro que indica la convergencia de los exponentes
 de Lyapunov. Devuelve
 
-tl, xl, yl, zl, xtl, ytl, ztl, lambda1l, lambda2l, lambda3l, flag
+`tl, xl, yl, zl, xtl, ytl, ztl, lambda1l, lambda2l, lambda3l, flag`
 
-donde tl es una lista de tiempos entre t0 y tf. xl, yl, zl son las listas que
-contienen la trayectoria integrada a cada tiempo de la lista tl. xtl, ytl y ztl
-son listas con los `Taylors` de cada tiempo de tl. lambda1l, lambda2l, lambda3l
-son listas de los tres exponentes calculados a cada tiempo de tl. flag es un
+donde `tl` es una lista de tiempos entre `t0` y `tf`. `xl, yl, zl` son las listas que
+contienen la trayectoria integrada a cada tiempo de la lista `tl`. `xtl, ytl y ztl`
+son listas con los `Taylor`'s de cada tiempo de `tl`. `lambda1l, lambda2l, lambda3l`
+son listas de los tres exponentes calculados a cada tiempo de `tl`. `flag` es un
 booleano que indica si los exponentes de Lyapunov convergieron en el tiempo de
 integración.
 
@@ -397,7 +428,7 @@ resolviéndolas por el método de Taylor. Se hace otrogonalización de Gramm-Sch
 en cada paso para evitar que los eigenvectores se "aplanen" en la dirección de
 máximo crecimiento.
 """
-function lorenz_all(t0::Real, tf::Real, x0::Real, y0::Real, z0::Real, r::Real, sigma::Real = 10.0, b::Real = 8/3, p::Int = 20, TOL::Real = 1.0e-5)
+function lorenz_all(t0::Real, tf::Real, x0::Real, y0::Real, z0::Real, r::Real, σ::Real = 10.0, b::Real = 8/3, p::Int = 20, TOL::Real = 1.0e-5)
     #Incializa la lista de respuestas: tl = time_list, xl = x_list, xtl = x_taylor_list, etc.
     tl = Array{Real}(0)
     xl = Array{Real}(0)
@@ -467,7 +498,7 @@ function lorenz_all(t0::Real, tf::Real, x0::Real, y0::Real, z0::Real, r::Real, s
       for i in range(1,p)
           #En cada paso se vuelve a calcular la serie de Taylor de dx/dt = f(x,y,z),
           #para dx/dt, dy/dt, dz/dt cada vez a mayor orden.
-          dx = sigma*(y-x)
+          dx = σ*(y-x)
           dy = r*x - y - x*z
           dz = x*y - b*z
           #De ésta se extrae el nuevo coeficiente de x(t), y(t), z(t) que se anexa.
@@ -477,7 +508,7 @@ function lorenz_all(t0::Real, tf::Real, x0::Real, y0::Real, z0::Real, r::Real, s
 
           if flag
             #El jacobiano:
-            j = [-sigma sigma 0; r-z -1 -x; y x -b]
+            j = [-σ σ 0; r-z -1 -x; y x -b]
 
             #Las eccuaciones diferenciales para cada componente de cada vector son:
             du1x = (j[1] * u1x + j[4] * u1y + j[7] * u1z)
@@ -608,11 +639,13 @@ function lorenz_all(t0::Real, tf::Real, x0::Real, y0::Real, z0::Real, r::Real, s
 end
 
 """
-## Conteo fractal.
-La función conteo_fractal(x,r) toma una lista x que contiene 3 arreglos de datos que
+# Conteo fractal.
+		conteo_fractal(x, r)
+
+Toma una lista `x` que contiene tres arreglos de datos que
 corresponden a la solución en el espacio fase de un sistema de ecuaciones diferenciales.
 La función identifica el tamaño que la solución ocupa y posteriormente divide este espacio
-en rxrxr cubos. La función cuenta el número de cubos que poseen al menos un punto de la
+en `r×r×r` cubos. La función cuenta el número de cubos que poseen al menos un punto de la
 solución dentro de ellos.
 """
 function conteo_fractal(x::Array{Array{Real,1},1},r::Int64)
@@ -676,14 +709,16 @@ function conteo_fractal(x::Array{Array{Real,1},1},r::Int64)
 end
 
 """
-## Dimensión fractal.
-La función dim_fractal_cajas(x,R) toma una lista x que contiene 3 arreglos de datos que
+# Dimensión fractal.
+		dim_fractal_cajas(x, R)
+
+Toma una lista x que contiene tres arreglos de datos que
 corresponden a la solución en el espacio fase de un sistema de ecuaciones diferenciales.
-La función utiliza la función conteo_fractal(x,r) para dividir el espacio fase
+La función utiliza la función `conteo_fractal(x,r)` para dividir el espacio fase
 de la solución y contar el número de cajas que contienen al menos un elemento
-de la solución en su interior. Este proceso lo realiza para R tamaños de caja distintos.
-Como salida se obtienen los valores de r utilizados, los valores de los conteos para cada
-r y el valor de la dimensión fractal.
+de la solución en su interior. Este proceso lo realiza para `R` tamaños de caja distintos.
+Como salida se obtienen los valores de `r` utilizados, los valores de los conteos para cada
+`r` y el valor de la dimensión fractal.
 """
 function dim_fractal_cajas{T}(x::Array{Array{T,1},1},R::Int)
     #Se inicializa la salida de la función en ceros.
