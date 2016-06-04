@@ -1,6 +1,6 @@
 __precompile__(true)
 """
-# LZ
+## LZ
 
 Módulo que resuelve las ecuaciones de Lorenz clásicas
 
@@ -36,7 +36,8 @@ module LZ
 using TS
 
 """
-# Integrador de las ecuaciones de Lorenz
+## Integrador de las ecuaciones de Lorenz
+
 		lorenz(t0,tf,x0,y0,z0,r,σ,b,p)
 
 Resuelve las ecuaciones de Lorenz con parámetros `r`, `σ`, `b` y condiciones
@@ -47,7 +48,7 @@ Devuelve cuatro listas
 `t, x, y, z`
 con las soluciones.
 
-## Ejemplo:
+### Ejemplo:
 Para obtener la solución del sistema con parámetros `r, σ, b = 28.0, 10.0, 8/3`,
 del tiempo inicial `t0 = 0.0` al tiempo final `tf = 100.0` con condiciones
 iniciales `(x0, y0, z0) = (0.1, 0.1, 0.1)` con series de Taylor a orden `p = 20`.
@@ -134,7 +135,8 @@ function lorenz(t0::Real, tf::Real, x0::Real, y0::Real, z0::Real, r::Real, σ::R
 end
 
 """
-# Comparador de Trayectorias
+## Comparador de Trayectorias
+
 		diflorenz(t0,tf,x01,y01,z01,x02,y02,z02,r,σ,b,p)
 
 Resuelve las ecuaciones de Lorenz con parámetros `r`, `σ`, `b` para dos condiciones
@@ -146,7 +148,7 @@ Devuelve siete listas
 `t, x1, y1, z1, x2, y2, z2`
 con las soluciones de los dos sistemas y la lista de tiempos.
 
-## Ejemplo:
+### Ejemplo:
 ```julia
 t, x1, y1, z1, x2, y2, z2 = diflorenz(0.0, 100.0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1 + 1.0e-9, 28.0, 10.0, 8/3, 20)
 ```
@@ -258,7 +260,8 @@ function diflorenz(t0::Real, tf::Real, x01::Real, y01::Real, z01::Real, x02::Rea
 end
 
 """
-# Integrador de las ecuaciones de Lorenz
+## Integrador de las ecuaciones de Lorenz
+
 		taylor_lorenz(t0,tf,x0,y0,z0,r,σ,b,p)
 
 Resuelve las ecuaciones de Lorenz con parámetros `r, σ, b` por el método de
@@ -345,7 +348,8 @@ function taylor_lorenz(t0::Real, tf::Real, x0::Real, y0::Real, z0::Real, r::Real
 end
 
 """
-# Jacobiano de las ecuaciones de Lorenz
+## Jacobiano de las ecuaciones de Lorenz
+
 		jacobian(t, tl, xl, yl, zl, r, σ, b)
 
 Calcula el jacobiano de las ecuaciones de Lorenz para parámetros `r, σ, b` a
@@ -359,7 +363,7 @@ Devuelve la matriz jacobiana:
  [y(t), x(t), -b]]
 ```
 
-## Ejemplo
+### Ejemplo
 Primero se calcula la solución entre un intervalo de tiempo `t ∈ [0,100]`, por decir
 y con ciertos parámetros y condiciones iniciales.
 ```julia
@@ -406,13 +410,15 @@ function jacobian(t::Real,tl::Array{Real,1},xl::Array{Taylor,1},yl::Array{Taylor
 end
 
 """
-# Integrador de trayectoria y exponentes de Lyapunov para las ecuaciones de Lorenz
-		lorenz_all(t0,tf,x0,y0,z0,r,σ,b,p,TOL)
+## Integrador de trayectoria y exponentes de Lyapunov para las ecuaciones de Lorenz
+
+		lorenz_all(t0,tf,x0,y0,z0,r,σ,b,p,TOL,gs_count)
 
 Resuleve el sistema Lorenz parametrizado con `r, σ, b` y condiciones iniciales
 `x0, y0, z0` integrando desde `t0 a tf`. `p` es el orden entero de los `Taylor`'s utilizados
 en el cálculo y `TOL` es un  parámetro que indica la convergencia de los exponentes
-de Lyapunov. Devuelve
+de Lyapunov. `gs_count` es cuántos pasos deben suceder para que se vuelve a ortogonalizar por
+GS. Devuelve
 
 `tl, xl, yl, zl, xtl, ytl, ztl, lambda1l, lambda2l, lambda3l, flag`
 
@@ -427,8 +433,20 @@ El cálculo de los exponentes se hace por medio de las ecuaciones variacionales,
 resolviéndolas por el método de Taylor. Se hace otrogonalización de Gramm-Schmidt
 en cada paso para evitar que los eigenvectores se "aplanen" en la dirección de
 máximo crecimiento.
+
+### Ejemplo
+Suponga que se quiere conocer los exponentes de Lyapunov del sistema Lorenz parametrizado por
+`r, σ, b = 28, 10, 8/3`. Entonces se integra desde un tiempo `t0=0` a `tf=1000` y con tolerancia
+`TOL = 1.0e-4`. Las condiciones iniciales se establecen como `x0, y0, z0 = 0.1, 0.1, 0.1`. Por lo
+tanto, al correr
+```julia
+sol = lorenz_all(0.0, 1000.0, 0.1, 0.1, 0.1, 28.0, 10.0, 8/3, 20, 1.0e-4)
+flag, l1, l2, l3 = sol[end][end], sol[end-1][end], sol[end-2], sol[end-3][end]
+```
+`flag` nos dice si los exponentes convergieron dentro del rango de toleracia `TOL` y las `l1, l2, l3`
+son los valores finales de los exponentes de Lyapunov.
 """
-function lorenz_all(t0::Real, tf::Real, x0::Real, y0::Real, z0::Real, r::Real, σ::Real = 10.0, b::Real = 8/3, p::Int = 20, TOL::Real = 1.0e-5)
+function lorenz_all(t0::Real, tf::Real, x0::Real, y0::Real, z0::Real, r::Real, σ::Real = 10.0, b::Real = 8/3, p::Int = 20, TOL::Real = 1.0e-5, gs_count::Int = 0)
     #Incializa la lista de respuestas: tl = time_list, xl = x_list, xtl = x_taylor_list, etc.
     tl = Array{Real}(0)
     xl = Array{Real}(0)
@@ -453,6 +471,9 @@ function lorenz_all(t0::Real, tf::Real, x0::Real, y0::Real, z0::Real, r::Real, �
     lambda1 = 0.0
     lambda2 = 0.0
     lambda3 = 0.0
+
+		#Contador de ortogonalización GS
+		counter = 0
 
     #La bandera que nos indica si el cálculo de los exponentes debe conitnuar
     flag = true
@@ -606,16 +627,26 @@ function lorenz_all(t0::Real, tf::Real, x0::Real, y0::Real, z0::Real, r::Real, �
       z0 = sz
 
       if flag
-        #Ortogonalizamos por GS
-        v1 = [s1x s1y s1z].'
-        u1 = v1/vecnorm(v1)
-        v2 = [s2x s2y s2z].'
-        v2 -= vecdot(v2, u1)*u1
-        u2 = v2/vecnorm(v2)
-        v3 = [s3x s3y s3z].'
-        v3 -= vecdot(v3, u1)*u1 + vecdot(v3, u2)*u2
-        u3 = v3/vecnorm(v3)
-
+				if counter == gs_count
+	        #Ortogonalizamos por GS
+	        v1 = [s1x s1y s1z].'
+	        u1 = v1/vecnorm(v1)
+	        v2 = [s2x s2y s2z].'
+	        v2 -= vecdot(v2, u1)*u1
+	        u2 = v2/vecnorm(v2)
+	        v3 = [s3x s3y s3z].'
+	        v3 -= vecdot(v3, u1)*u1 + vecdot(v3, u2)*u2
+	        u3 = v3/vecnorm(v3)
+					counter = 0
+				else
+					v1 = [s1x s1y s1z].'
+					u1 = v1/vecnorm(v1)
+					v2 = [s2x s2y s2z].'
+					u2 = v2/vecnorm(v2)
+					v3 = [s3x s3y s3z].'
+					u3 = v3/vecnorm(v3)
+					counter += 1
+				end
         #Calculamos los exponentes de Lyapunov
         lambda1 = (lambda1*(t-h-t0) + log(vecnorm(v1)))/(t-t0)
         lambda2 = (lambda2*(t-h-t0) + log(vecnorm(v2)))/(t-t0)
@@ -639,7 +670,8 @@ function lorenz_all(t0::Real, tf::Real, x0::Real, y0::Real, z0::Real, r::Real, �
 end
 
 """
-# Conteo fractal.
+## Conteo fractal.
+
 		conteo_fractal(x, r)
 
 Toma una lista `x` que contiene tres arreglos de datos que
@@ -709,7 +741,8 @@ function conteo_fractal(x::Array{Array{Real,1},1},r::Int64)
 end
 
 """
-# Dimensión fractal.
+## Dimensión fractal.
+
 		dim_fractal_cajas(x, R)
 
 Toma una lista x que contiene tres arreglos de datos que
